@@ -1,0 +1,133 @@
+---
+title: "Influencia del COVID-19 en los mejores equipos de la MLB"
+output:
+  html_document:
+    df_print: paged
+---
+## Importacion de Librerias Necesarias.
+#
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+```
+#
+## Importacion de CSV.
+
+En este apartado, importamos el CSV con la informacion de contagios por **Condado**.
+
+```{r}
+url = "https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv"
+covidByCounty <- read.csv(file = url)
+
+```
+
+## Seleccion de Condados.
+
+De acuerdo a una investigacion, observamos que los dos equipos finalistas por liga fueron:
+
+* American League
+  * Tampa Bay. -- Hillsborough County
+  * Houston Astros -- Harris County.
+* National League.
+  * Los Angeles Dodgers -- Los Angeles County.
+  * Atlanta Braves Fulton County.
+```{r}
+str(covidByCounty)
+counties <- filter(covidByCounty, county == "Harris" | county == "Los Angeles" | county == "Hillsborough" | county == "Fulton")
+```
+
+## Tratamiento de Datos:
+
+En este apartado, seleccionamos los datos necesarios para realizar nuestro analisis. Renombramos nuestras variables y las mutamos para que opuedan ser utilizadas.
+
+```{r}
+counties <- select(counties, date,county,cases, fips)
+counties <- mutate(counties, date = as.Date(date,"%Y-%m-%d"))
+str(counties)
+```
+
+Posteriormente, filtramos por la fecha de inicio de la temporada y la fecha de conclusion.
+
+* Start Date:
+  * Jul 23, 2020.
+* End Date:
+  * Sept, 29, 2020.
+```{r}
+counties <- filter(counties, date >= "2020-07-23" & date <= "2020-09-29")
+```
+
+Una vez que ya hemos pre filtrado nuestra informacion, procedemos a crear nuestros Dataframes por Condado.
+
+### Tampa Bay Rays
+
+```{r}
+TampaCounty <- filter(counties, county == "Hillsborough" & fips == 12057)
+TampaCounty <- mutate(TampaCounty, NewCases = c(1, diff(cases))) # Nuevos infectados por día
+TampaCounty <- TampaCounty %>% group_by(date=floor_date(date, "7 days"),county,) %>%
+   summarize(NewCases=sum(NewCases))
+head(TampaCounty)
+```
+
+### Los Angeles Dodgers
+
+```{r}
+DodgersCounty <- filter(counties, county == "Los Angeles")
+DodgersCounty <- mutate(DodgersCounty, NewCases = c(1, diff(cases))) # Nuevos infectados por día
+DodgersCounty <- DodgersCounty %>% group_by(date=floor_date(date, "7 days"),county,) %>%
+   summarize(NewCases=sum(NewCases))
+head(DodgersCounty)
+```
+
+### Houston Astros
+
+```{r}
+AstrosCounty <- filter(counties, county == "Harris")
+AstrosCounty <- mutate(AstrosCounty, NewCases = c(1, diff(cases))) # Nuevos infectados por día
+AstrosCounty <- AstrosCounty %>% group_by(date=floor_date(date, "7 days"),county,) %>%
+   summarize(NewCases=sum(NewCases))
+head(AstrosCounty)
+```
+
+### AtlantaBraves
+```{r}
+BravesCounty <- filter(counties, county == "Fulton" & fips == 13121)
+BravesCounty <- mutate(BravesCounty, NewCases = c(1, diff(cases))) # Nuevos infectados por día
+BravesCounty <- BravesCounty %>% group_by(date=floor_date(date, "7 days"),county,) %>%
+   summarize(NewCases=sum(NewCases))
+head(BravesCounty)
+```
+
+## Graficas de Resultados Individuales por Condado
+### Contagios de COVID en el Condado donde Juega Tampa Bay
+```{r}
+ggplot(TampaCounty, aes(x=date, y = NewCases)) + 
+  geom_line() +ggtitle("Nuevos Contagios en el Condado de Tampa Bay")
+```
+### Contagios de COVID en el Condado donde Juegan Los Angeles Dodgers
+```{r}
+ggplot(DodgersCounty, aes(x=date, y = NewCases)) + 
+  geom_line() +ggtitle("Nuevos Contagios en el Condado de los Dodgers")
+```
+
+
+### Contagios de COVID en el Condado donde Juega Atlanta Braves
+```{r}
+ggplot(BravesCounty, aes(x=date, y = NewCases)) + 
+  geom_line() +ggtitle("Nuevos Contagios en el Condado de Atlanta Braves")
+```
+
+### Contagios de COVID en el Condado donde Juegan los Houston Astros
+```{r}
+ggplot(AstrosCounty, aes(x=date, y = NewCases)) + 
+  geom_line() +ggtitle("Nuevos Contagios en el Condado de Houston Astros")
+```
+## Graficas de los Resultados de contagios de COVID de los 4` Condados
+Para poder realizar esta grafica es necesario, agrupar los 4 resultados en un solo dataframe, despues de esto graficamos.
+```{r}
+mlbCounties <-  rbind(AstrosCounty,BravesCounty, DodgersCounty, TampaCounty)
+
+
+ggplot(mlbCounties) + geom_line(aes(x = date, y = NewCases, colour=county)) + facet_wrap(NewCases)
+ggplot(mlbCounties) + geom_point(aes(x = date, y = NewCases, colour=county)) + facet_wrap(NewCases)
+```
