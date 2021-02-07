@@ -1,6 +1,8 @@
 ---
 title: "Influencia del COVID-19 en los mejores equipos de la MLB"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 ## Importacion de Librerias Necesarias.
 #
@@ -120,9 +122,12 @@ ggplot(BravesCounty, aes(x=date, y = NewCases)) +
 ggplot(AstrosCounty, aes(x=date, y = NewCases)) + 
   geom_line() +ggtitle("Nuevos Contagios en el Condado de Houston Astros")
 ```
+## Graficas de los Resultados de contagios de COVID de los 4` Condados
+Para poder realizar esta grafica es necesario, agrupar los 4 resultados en un solo dataframe, despues de esto graficamos.
+```{r}
+mlbCounties <-  rbind(AstrosCounty,BravesCounty, DodgersCounty, TampaCounty)
 
 
-
-
-
-aaa
+ggplot(mlbCounties) + geom_line(aes(x = date, y = NewCases, colour=county))
+ggplot(mlbCounties) + geom_point(aes(x = date, y = NewCases, colour=county))
+```
